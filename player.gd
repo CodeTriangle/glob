@@ -18,19 +18,68 @@ var speed_mod = 1
 var can_move = true
 var state = STATE_NORMAL
 var stabilize_timer = 0
-var normal_shape = ConvexPolygonShape2D.new()
-var grown_shape = ConvexPolygonShape2D.new()
-var shrunken_shape = ConvexPolygonShape2D.new()
+var double_action_timer = 0
+var can_act_again = false
+var normal_shape = CapsuleShape2D.new()
+var grown_shape = CapsuleShape2D.new()
+var shrunken_shape = CapsuleShape2D.new()
+var puddle_shape = RectangleShape2D.new()
 
 var animator
+var collision
 
+func normalize(from):
+	animator.play_backwards(from)
+	animator.queue("idle")
+	clear_shapes()
+	add_shape(normal_shape, Matrix32(PI/2, Vector2(0, 2)))
+	can_move = true
+	can_act_again = false
+	state = STATE_NORMAL
+	speed_mod = 1
+
+func grow():
+	animator.play("grow")
+	clear_shapes()
+	add_shape(grown_shape, Matrix32(0, Vector2(0, -4.5)))
+	can_move = false
+	state = STATE_GROWN
+	stabilize_timer = 1
+
+func shrink():
+	animator.play("shrink")
+	animator.queue("shrunkenidle")
+	clear_shapes()
+	add_shape(shrunken_shape, Matrix32(PI/2, Vector2(0, 3.5)))
+	state = STATE_SHRUNKEN
+	speed_mod = 0.5
+	stabilize_timer = 1
+
+func puddle():
+	animator.play("puddle")
+	clear_shapes()
+	add_shape(puddle_shape, Matrix32(0, Vector2(0, 6)))
+	state = STATE_PUDDLE
+	can_move = false
+	stabilize_timer = 1
+	
 func _ready():
 	animator = get_node("sprite/animator")
-	normal_shape.set_points(Vector2Array([Vector2(2, -5), Vector2(6, -2), Vector2(7, 1), Vector2(7, 5), Vector2(4, 8), Vector2(-4, 8), Vector2(-7, 5), Vector2(-7, 1), Vector2(-6, -2), Vector2(-2, -5)]))
-	grown_shape.set_points(Vector2Array([Vector2(2, -17), Vector2(6, -10), Vector2(7, -5), Vector2(7, 2), Vector2(3, 8), Vector2(-3, 8), Vector2(-7, 2), Vector2(-7, -5), Vector2(-6, -10), Vector2(-2, -17)]))
-	shrunken_shape.set_points(Vector2Array([Vector2(2, -1), Vector2(7, 3), Vector2(7, 8), Vector2(-7, 8), Vector2(-7, 3), Vector2(-2, 1)]))
-	add_shape(normal_shape)
+	collision = get_node("collision")
 	
+	normal_shape.set_height(2)
+	normal_shape.set_radius(6)
+	
+	grown_shape.set_radius(7)
+	grown_shape.set_height(11)
+	
+	shrunken_shape.set_radius(4.5)
+	shrunken_shape.set_height(5.5)
+	
+	puddle_shape.set_extents(Vector2(7, 2))
+	
+	normalize("shrink")
+
 # Main Function for Movement
 func _integrate_forces(s):
 	var lv = s.get_linear_velocity()
@@ -51,45 +100,30 @@ func _integrate_forces(s):
 		if lv.x >= TERMINAL_VELOCITY*speed_mod: lv.x = TERMINAL_VELOCITY*speed_mod
 		if lv.x <= -TERMINAL_VELOCITY*speed_mod: lv.x = -TERMINAL_VELOCITY*speed_mod
 	
+	# Start growing if [grow] is held
 	if grow and not shrink and state == STATE_NORMAL: state = STATE_GROWING
+	# Immediately grow when [shrink] is released
+	if not grow and state == STATE_GROWING: grow()
+	# Restart timer as long as [grow] is still held
+	if grow and state == STATE_GROWN: stabilize_timer = 1
+	# Go back to normal when the timer is finished ticking
+	if state == STATE_GROWN and stabilize_timer <= 0: normalize("grow")
+	# Start shrinking if [shrink] is held
 	if shrink and not grow and state == STATE_NORMAL: state = STATE_SHRINKING
-	
-	if not grow and state == STATE_GROWING:
-		animator.play("grow")
-		clear_shapes()
-		add_shape(grown_shape)
-		can_move = false
-		state = STATE_GROWN
-		stabilize_timer = 3
-	
-	if grow and state == STATE_GROWN: stabilize_timer = 3
-	
-	if state == STATE_GROWN and stabilize_timer <= 0:
-		animator.play_backwards("grow")
-		animator.queue("idle")
-		clear_shapes()
-		add_shape(normal_shape)
-		can_move = true
-		state = STATE_NORMAL
-	
-	if shrink and state == STATE_SHRINKING:
-		animator.play("shrink")
-		animator.queue("shrunkenidle")
-		clear_shapes()
-		add_shape(shrunken_shape)
-		state = STATE_SHRUNKEN
-		speed_mod = 0.5
-		stabilize_timer = 1
-		
+	# Immediately shrink when state is STATE_SHRINKING
+	if shrink and state == STATE_SHRINKING: shrink()
+	# Restart timer as long as [shrink] is still held
 	if shrink and state == STATE_SHRUNKEN: stabilize_timer = 1
-	
-	if state == STATE_SHRUNKEN and stabilize_timer <= 0:
-		animator.play_backwards("shrink")
-		animator.queue("idle")
-		clear_shapes()
-		add_shape(normal_shape)
-		state = STATE_NORMAL
-		speed_mod = 1
+	# Go back to normal when the timer is finished ticking
+	if state == STATE_SHRUNKEN and stabilize_timer <= 0: normalize("shrink")
+	# Once [shrink] is released, allow player to press [shrink] again to puddle
+	if not shrink and state == STATE_SHRUNKEN: can_act_again = true
+	# Puddle when the player presses [shrink] a second time
+	if shrink and can_act_again and state == STATE_SHRUNKEN: puddle()
+	# Restart timer as long as [shrink] is still held
+	if shrink and state == STATE_PUDDLE: stabilize_timer = 1
+	# Go back to normal when the timer is finished ticking
+	if state == STATE_PUDDLE and stabilize_timer <= 0: normalize("melt")
 	
 	# Apply modifications
 	s.set_linear_velocity(lv)
