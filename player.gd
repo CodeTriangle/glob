@@ -18,17 +18,51 @@ var speed_mod = 1
 var can_move = true
 var state = STATE_NORMAL
 var stabilize_timer = 0
-var double_action_timer = 0
 var can_act_again = false
+var on_ground = true
+var mass = 128
+var max_mass = 128
+var hp = 16
+var max_hp = 16
+
+# Shapes
 var normal_shape = CapsuleShape2D.new()
 var grown_shape = CapsuleShape2D.new()
 var shrunken_shape = CapsuleShape2D.new()
 var puddle_shape = RectangleShape2D.new()
 
+# Elements
 var animator
-var collision
+var player
+var mass_bar
+var hp_bar
+var walls
+var trail
 
-func normalize(from):
+func _ready():
+	set_fixed_process(true)
+	
+	animator = get_node("sprite/animator")
+	player = load("res://player.tscn")
+	mass_bar = get_node("mass")
+	hp_bar = get_node("hp")
+	walls = get_node("../walls")
+	trail = get_node("../trail")
+	
+	normal_shape.set_height(2)
+	normal_shape.set_radius(6)
+	
+	grown_shape.set_radius(7)
+	grown_shape.set_height(11)
+	
+	shrunken_shape.set_radius(4)
+	shrunken_shape.set_height(6)
+	
+	puddle_shape.set_extents(Vector2(7, 2))
+	
+	normalize()
+
+func normalize(from=""):
 	animator.play_backwards(from)
 	animator.queue("idle")
 	clear_shapes()
@@ -42,15 +76,15 @@ func grow():
 	animator.play("grow")
 	clear_shapes()
 	add_shape(grown_shape, Matrix32(0, Vector2(0, -4.5)))
-	can_move = false
 	state = STATE_GROWN
+	speed_mod = 0.1
 	stabilize_timer = 1
 
 func shrink():
 	animator.play("shrink")
 	animator.queue("shrunkenidle")
 	clear_shapes()
-	add_shape(shrunken_shape, Matrix32(PI/2, Vector2(0, 3.5)))
+	add_shape(shrunken_shape, Matrix32(PI/2, Vector2(0, 4)))
 	state = STATE_SHRUNKEN
 	speed_mod = 0.5
 	stabilize_timer = 1
@@ -62,23 +96,35 @@ func puddle():
 	state = STATE_PUDDLE
 	can_move = false
 	stabilize_timer = 1
+
+func shoot():
+	normalize("grow")
+	state = STATE_INACTIVE
+	can_move = false
 	
-func _ready():
-	animator = get_node("sprite/animator")
-	collision = get_node("collision")
+	var p = player.instance()
 	
-	normal_shape.set_height(2)
-	normal_shape.set_radius(6)
+	var lv = get_linear_velocity()
+	lv.y -= 150
+	p.set_linear_velocity(lv)
 	
-	grown_shape.set_radius(7)
-	grown_shape.set_height(11)
+	var psn = get_pos()
+	psn.y -= 30
+	p.set_pos(psn)
 	
-	shrunken_shape.set_radius(4.5)
-	shrunken_shape.set_height(5.5)
+	mass /= 2
+	p.mass = mass
+	p.hp = hp
 	
-	puddle_shape.set_extents(Vector2(7, 2))
+	get_parent().players.append(p)
+	get_parent().add_child(p)
+
+func _fixed_process(delta):
+	mass_bar.set_value(mass)
+	mass_bar.set_max(max_mass)
 	
-	normalize("shrink")
+	hp_bar.set_value(hp)
+	hp_bar.set_max(max_hp)
 
 # Main Function for Movement
 func _integrate_forces(s):
@@ -93,37 +139,59 @@ func _integrate_forces(s):
 	
 	stabilize_timer -= step
 	
-	if can_move:
+	on_ground = false
+	
+	for x in range(s.get_contact_count()): if s.get_contact_local_normal(x).dot(Vector2(0, -1)) > 0.6: on_ground = true
+	
+	if on_ground:
+		if can_move:
+			if move_left and not move_right: lv.x -= MOVEMENT_SPEED*step
+			if move_right and not move_left: lv.x += MOVEMENT_SPEED*step
+			
+			if lv.x >= TERMINAL_VELOCITY*speed_mod: lv.x = TERMINAL_VELOCITY*speed_mod
+			if lv.x <= -TERMINAL_VELOCITY*speed_mod: lv.x = -TERMINAL_VELOCITY*speed_mod
+	
+		# Start growing if [grow] is held
+		if grow and not shrink and on_ground and state == STATE_NORMAL: state = STATE_GROWING
+		# Immediately grow when [shrink] is released
+		if grow and state == STATE_GROWING: grow()
+		# Restart timer as long as [grow] is still held
+		if grow and state == STATE_GROWN: stabilize_timer = 1
+		# Go back to normal when the timer is finished ticking
+		if state == STATE_GROWN and stabilize_timer <= 0: normalize("grow")
+		# Once [grow] is released, allow player to press [grow] again to shoot
+		if not grow and state == STATE_GROWN: can_act_again = true
+		# Shoot a new gel once the player presses [grow] a second time
+		if grow and can_act_again and state == STATE_GROWN: shoot()
+		# Start shrinking if [shrink] is held
+		if shrink and not grow and state == STATE_NORMAL: state = STATE_SHRINKING
+		# Immediately shrink when state is STATE_SHRINKING
+		if shrink and state == STATE_SHRINKING: shrink()
+		# Restart timer as long as [shrink] is still held
+		if shrink and state == STATE_SHRUNKEN: stabilize_timer = 1
+		# Go back to normal when the timer is finished ticking
+		if state == STATE_SHRUNKEN and stabilize_timer <= 0: normalize("shrink")
+		# Once [shrink] is released, allow player to press [shrink] again to puddle
+		if not shrink and state == STATE_SHRUNKEN: can_act_again = true
+		# Puddle when the player presses [shrink] a second time
+		if shrink and can_act_again and state == STATE_SHRUNKEN: puddle()
+		# Restart timer as long as [shrink] is still held
+		if shrink and state == STATE_PUDDLE: stabilize_timer = 1
+		# Go back to normal when the timer is finished ticking
+		if state == STATE_PUDDLE and stabilize_timer <= 0: normalize("melt")
+	elif can_move:
 		if move_left and not move_right: lv.x -= MOVEMENT_SPEED*step
 		if move_right and not move_left: lv.x += MOVEMENT_SPEED*step
 		
 		if lv.x >= TERMINAL_VELOCITY*speed_mod: lv.x = TERMINAL_VELOCITY*speed_mod
 		if lv.x <= -TERMINAL_VELOCITY*speed_mod: lv.x = -TERMINAL_VELOCITY*speed_mod
 	
-	# Start growing if [grow] is held
-	if grow and not shrink and state == STATE_NORMAL: state = STATE_GROWING
-	# Immediately grow when [shrink] is released
-	if not grow and state == STATE_GROWING: grow()
-	# Restart timer as long as [grow] is still held
-	if grow and state == STATE_GROWN: stabilize_timer = 1
-	# Go back to normal when the timer is finished ticking
-	if state == STATE_GROWN and stabilize_timer <= 0: normalize("grow")
-	# Start shrinking if [shrink] is held
-	if shrink and not grow and state == STATE_NORMAL: state = STATE_SHRINKING
-	# Immediately shrink when state is STATE_SHRINKING
-	if shrink and state == STATE_SHRINKING: shrink()
-	# Restart timer as long as [shrink] is still held
-	if shrink and state == STATE_SHRUNKEN: stabilize_timer = 1
-	# Go back to normal when the timer is finished ticking
-	if state == STATE_SHRUNKEN and stabilize_timer <= 0: normalize("shrink")
-	# Once [shrink] is released, allow player to press [shrink] again to puddle
-	if not shrink and state == STATE_SHRUNKEN: can_act_again = true
-	# Puddle when the player presses [shrink] a second time
-	if shrink and can_act_again and state == STATE_SHRUNKEN: puddle()
-	# Restart timer as long as [shrink] is still held
-	if shrink and state == STATE_PUDDLE: stabilize_timer = 1
-	# Go back to normal when the timer is finished ticking
-	if state == STATE_PUDDLE and stabilize_timer <= 0: normalize("melt")
+	var tp = get_pos()
+	
+	var cs = trail.get_cellv(tp)
+	
+	if cs == -1:
+		trail.set_cell(floor(tp.x/16), floor(tp.y/16), 0)
 	
 	# Apply modifications
 	s.set_linear_velocity(lv)
