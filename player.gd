@@ -24,6 +24,7 @@ var mass = 128
 var max_mass = 128
 var hp = 16
 var max_hp = 16
+var cells = {}
 
 # Shapes
 var normal_shape = CapsuleShape2D.new()
@@ -38,6 +39,8 @@ var mass_bar
 var hp_bar
 var walls
 var trail
+var root
+var this
 
 func _ready():
 	set_fixed_process(true)
@@ -48,6 +51,8 @@ func _ready():
 	hp_bar = get_node("hp")
 	walls = get_node("../walls")
 	trail = get_node("../trail")
+	root = get_parent()
+	this = get_node(".")
 	
 	normal_shape.set_height(2)
 	normal_shape.set_radius(6)
@@ -116,8 +121,14 @@ func shoot():
 	p.mass = mass
 	p.hp = hp
 	
-	get_parent().players.append(p)
-	get_parent().add_child(p)
+	root.players.append(p)
+	root.add_child(p)
+
+func die():
+	var players = root.players
+	players.remove(players.find(this))
+	root.remove_child(this)
+	if players.size() > 0: players[players.size()-1].normalize()
 
 func _fixed_process(delta):
 	mass_bar.set_value(mass)
@@ -125,6 +136,28 @@ func _fixed_process(delta):
 	
 	hp_bar.set_value(hp)
 	hp_bar.set_max(max_hp)
+	
+	var tp = get_pos()
+	tp = Vector2(floor(tp.x/16), floor(tp.y/16))
+	
+	cells["current"] = tp
+	cells["above"] = Vector2(tp.x, tp.y-1)
+	cells["below"] = Vector2(tp.x, tp.y+1)
+	cells["left"] = Vector2(tp.x-1, tp.y)
+	cells["right"] = Vector2(tp.x+1, tp.y)
+	
+	if trail.get_cellv(tp) == -1 and not walls.get_cell(tp.x, tp.y+1) == -1 and on_ground:
+		trail.set_cellv(tp, 0)
+		mass -= 1
+	
+	print(walls.get_cellv(tp))
+	
+	if walls.get_cellv(cells["current"]) == 16: die()
+	if walls.get_cellv(cells["current"]) == 18: die()
+	if walls.get_cellv(cells["current"]) == 17: die()
+	
+	if mass <= 0: die()
+	if hp <= 0: die()
 
 # Main Function for Movement
 func _integrate_forces(s):
@@ -185,13 +218,6 @@ func _integrate_forces(s):
 		
 		if lv.x >= TERMINAL_VELOCITY*speed_mod: lv.x = TERMINAL_VELOCITY*speed_mod
 		if lv.x <= -TERMINAL_VELOCITY*speed_mod: lv.x = -TERMINAL_VELOCITY*speed_mod
-	
-	var tp = get_pos()
-	tp = Vector2(floor(tp.x/16), floor(tp.y/16))
-	
-	if trail.get_cellv(tp) == -1 and not walls.get_cell(tp.x, tp.y+1) == -1 and on_ground:
-		trail.set_cellv(tp, 0)
-		mass -= 1
 	
 	# Apply modifications
 	s.set_linear_velocity(lv)

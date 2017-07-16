@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=1]
+[gd_scene load_steps=12 format=1]
 
 [ext_resource path="res://player.gd" type="Script" id=1]
 [ext_resource path="res://player.png" type="Texture" id=2]
@@ -18,18 +18,6 @@ tracks/0/interp = 1
 tracks/0/imported = false
 tracks/0/keys = { "times":FloatArray( 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6 ), "transitions":FloatArray( 1, 1, 1, 1, 1, 1, 1 ), "update":1, "values":[ 0, 1, 2, 3, 4, 5, 6 ] }
 
-[sub_resource type="Animation" id=2]
-
-resource/name = "hpfade"
-length = 0.5
-loop = true
-step = 0.1
-tracks/0/type = "value"
-tracks/0/path = NodePath("../hp:visibility/opacity")
-tracks/0/interp = 1
-tracks/0/imported = false
-tracks/0/keys = { "times":FloatArray( 0, 0.4, 0.5 ), "transitions":FloatArray( 1, 1, 1 ), "update":0, "values":[ 1.0, 0.0, 0.0 ] }
-
 [sub_resource type="Animation" id=3]
 
 length = 1.0
@@ -40,18 +28,6 @@ tracks/0/path = NodePath(".:frame")
 tracks/0/interp = 1
 tracks/0/imported = false
 tracks/0/keys = { "times":FloatArray( 0, 0.5 ), "transitions":FloatArray( 1, 1 ), "update":1, "values":[ 0, 7 ] }
-
-[sub_resource type="Animation" id=4]
-
-resource/name = "massfade"
-length = 0.5
-loop = true
-step = 0.1
-tracks/0/type = "value"
-tracks/0/path = NodePath("../mass:visibility/opacity")
-tracks/0/interp = 1
-tracks/0/imported = false
-tracks/0/keys = { "times":FloatArray( 0, 0.4, 0.5 ), "transitions":FloatArray( 1, 1, 1 ), "update":0, "values":[ 1.0, 0.0, 0.0 ] }
 
 [sub_resource type="Animation" id=5]
 
@@ -125,7 +101,7 @@ transform/pos = Vector2( 0, -8 )
 texture = ExtResource( 2 )
 vframes = 3
 hframes = 5
-frame = 9
+frame = 6
 
 [node name="animator" type="AnimationPlayer" parent="sprite"]
 
@@ -133,14 +109,11 @@ playback/process_mode = 1
 playback/default_blend_time = 0.0
 root/root = NodePath("..")
 anims/grow = SubResource( 1 )
-anims/hpfade = SubResource( 2 )
 anims/idle = SubResource( 3 )
-anims/massfade = SubResource( 4 )
 anims/melt = SubResource( 5 )
 anims/puddle = SubResource( 6 )
 anims/shrink = SubResource( 7 )
 anims/shrunkenidle = SubResource( 8 )
-next/massfade = ""
 next/melt = ""
 playback/active = true
 playback/speed = 1.0
@@ -169,14 +142,15 @@ drag_margin/bottom = 0.05
 
 [node name="hp" type="TextureProgress" parent="."]
 
+rect/scale = Vector2( 0.5, 0.5 )
 focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 2
 size_flags/vertical = 2
 margin/left = -16.0
-margin/top = -26.0
+margin/top = 10.0
 margin/right = 16.0
-margin/bottom = -18.0
+margin/bottom = 18.0
 range/min = 0.0
 range/max = 100.0
 range/step = 1.0
@@ -187,19 +161,21 @@ range/rounded = false
 texture/under = ExtResource( 3 )
 texture/over = null
 texture/progress = ExtResource( 4 )
+mode = 1
 radial_fill/fill_degrees = 360.0
 radial_fill/center_offset = Vector2( 0, 0 )
 
 [node name="mass" type="TextureProgress" parent="."]
 
+rect/scale = Vector2( 0.5, 0.5 )
 focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 2
 size_flags/vertical = 2
-margin/left = -16.0
-margin/top = -36.0
-margin/right = 16.0
-margin/bottom = -28.0
+margin/left = 0.0
+margin/top = 10.0
+margin/right = 32.0
+margin/bottom = 18.0
 range/min = 0.0
 range/max = 100.0
 range/step = 1.0
