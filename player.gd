@@ -187,11 +187,11 @@ func _integrate_forces(s):
 		if lv.x <= -TERMINAL_VELOCITY*speed_mod: lv.x = -TERMINAL_VELOCITY*speed_mod
 	
 	var tp = get_pos()
+	tp = Vector2(floor(tp.x/16), floor(tp.y/16))
 	
-	var cs = trail.get_cellv(tp)
-	
-	if cs == -1:
-		trail.set_cell(floor(tp.x/16), floor(tp.y/16), 0)
+	if trail.get_cellv(tp) == -1 and not walls.get_cell(tp.x, tp.y+1) == -1 and on_ground:
+		trail.set_cellv(tp, 0)
+		mass -= 1
 	
 	# Apply modifications
 	s.set_linear_velocity(lv)

@@ -7,17 +7,17 @@
 custom_solver_bias = 0.0
 points = Vector2Array( 8, -8, 8, 8, -8, 8, -8, -8 )
 
-[sub_resource type="ConvexPolygonShape2D" id=3]
+[sub_resource type="ConvexPolygonShape2D" id=2]
 
 custom_solver_bias = 0.0
 points = Vector2Array( 0, 5, -8, 8, -8, -8, 0, -5 )
 
-[sub_resource type="ConvexPolygonShape2D" id=4]
+[sub_resource type="ConvexPolygonShape2D" id=3]
 
 custom_solver_bias = 0.0
 points = Vector2Array( -5, 0, -8, -8, 8, -8, 5, 0 )
 
-[sub_resource type="ConvexPolygonShape2D" id=2]
+[sub_resource type="ConvexPolygonShape2D" id=4]
 
 custom_solver_bias = 0.0
 points = Vector2Array( 5, 0, 8, 8, -8, 8, -5, 0 )
@@ -179,7 +179,7 @@ points = Vector2Array( -8, -8, 8, -8, 8, 0, -8, 0 )
 16/occluder_offset = Vector2( 8, 8 )
 16/navigation_offset = Vector2( 8, 8 )
 16/shape_offset = Vector2( 8, 8 )
-16/shapes = [ SubResource( 3 ) ]
+16/shapes = [ SubResource( 2 ) ]
 17/name = "spikes-up"
 17/texture = ExtResource( 1 )
 17/tex_offset = Vector2( 0, 0 )
@@ -187,7 +187,7 @@ points = Vector2Array( -8, -8, 8, -8, 8, 0, -8, 0 )
 17/occluder_offset = Vector2( 8, 8 )
 17/navigation_offset = Vector2( 8, 8 )
 17/shape_offset = Vector2( 8, 8 )
-17/shapes = [ SubResource( 4 ) ]
+17/shapes = [ SubResource( 3 ) ]
 18/name = "spikes-down"
 18/texture = ExtResource( 1 )
 18/tex_offset = Vector2( 0, 0 )
@@ -195,7 +195,7 @@ points = Vector2Array( -8, -8, 8, -8, 8, 0, -8, 0 )
 18/occluder_offset = Vector2( 8, 8 )
 18/navigation_offset = Vector2( 8, 8 )
 18/shape_offset = Vector2( 8, 8 )
-18/shapes = [ SubResource( 2 ) ]
+18/shapes = [ SubResource( 4 ) ]
 19/name = "spikes-right"
 19/texture = ExtResource( 1 )
 19/tex_offset = Vector2( 0, 0 )
