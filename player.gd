@@ -22,8 +22,6 @@ var can_act_again = false
 var on_ground = true
 var mass = 128
 var max_mass = 128
-var hp = 16
-var max_hp = 16
 var cells = {}
 
 # Shapes
@@ -36,7 +34,6 @@ var puddle_shape = RectangleShape2D.new()
 var animator
 var player
 var mass_bar
-var hp_bar
 var walls
 var trail
 var root
@@ -48,11 +45,12 @@ func _ready():
 	animator = get_node("sprite/animator")
 	player = load("res://player.tscn")
 	mass_bar = get_node("mass")
-	hp_bar = get_node("hp")
 	walls = get_node("../walls")
 	trail = get_node("../trail")
 	root = get_parent()
 	this = get_node(".")
+	
+	mass_bar.set_max(max_mass)
 	
 	normal_shape.set_height(2)
 	normal_shape.set_radius(6)
@@ -119,23 +117,40 @@ func shoot():
 	
 	mass /= 2
 	p.mass = mass
-	p.hp = hp
+	
+	root.players.append(p)
+	root.add_child(p)
+
+func merge(with):
+	var p = player.instance()
+	
+	p.set_linear_velocity(get_linear_velocity()+with.get_linear_velocity()/2)
+	
+	p.set_pos(with.get_pos())
+	
+	p.mass = mass + with.mass
+	p.max_mass = max_mass
+	
+	root.remove_child(this)
+	root.players.remove(root.players.find(this))
+	root.remove_child(with)
+	root.players.remove(root.players.find(with))
 	
 	root.players.append(p)
 	root.add_child(p)
 
 func die():
-	var players = root.players
-	players.remove(players.find(this))
-	root.remove_child(this)
-	if players.size() > 0: players[players.size()-1].normalize()
+	if root.players.size() > 1:
+		root.players.remove(root.players.find(this))
+		root.remove_child(this)
+		root.players[root.players.size()-1].normalize()
+	else:
+		get_tree().change_scene("res://menu.tscn")
 
 func _fixed_process(delta):
 	mass_bar.set_value(mass)
-	mass_bar.set_max(max_mass)
 	
-	hp_bar.set_value(hp)
-	hp_bar.set_max(max_hp)
+	if not state == STATE_INACTIVE: for i in get_colliding_bodies(): if root.players.has(i): merge(i)
 	
 	var tp = get_pos()
 	tp = Vector2(floor(tp.x/16), floor(tp.y/16))
@@ -149,15 +164,24 @@ func _fixed_process(delta):
 	if trail.get_cellv(tp) == -1 and not walls.get_cell(tp.x, tp.y+1) == -1 and on_ground:
 		trail.set_cellv(tp, 0)
 		mass -= 1
+		
+	if walls.get_cellv(cells["current"]) == 15:
+		get_node("../temp").set_pos(Vector2(cells["current"].x*16, cells["current"].y*16))
+		root.recollect()
+		root.generate_player()
 	
-	print(walls.get_cellv(tp))
+	if walls.get_cellv(cells["current"]) == 13:
+		get_node("../temp").set_pos(Vector2(cells["current"].x*16, cells["current"].y*16))
+		walls.set_cellv(cells["current"], 15)
+		root.power_up()
 	
 	if walls.get_cellv(cells["current"]) == 16: die()
 	if walls.get_cellv(cells["current"]) == 18: die()
 	if walls.get_cellv(cells["current"]) == 17: die()
 	
 	if mass <= 0: die()
-	if hp <= 0: die()
+	
+	if cells["current"].x > 92 and cells["current"].y == 20: get_tree().change_scene("res://menu.tscn")
 
 # Main Function for Movement
 func _integrate_forces(s):

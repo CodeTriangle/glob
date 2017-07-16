@@ -307,7 +307,7 @@ vframes = 6
 hframes = 6
 frame = 12
 
-[node name="hp-box" type="Sprite" parent="." groups=[ "ground" ]]
+[node name="hp-box" type="Sprite" parent="."]
 
 transform/pos = Vector2( 8, 56 )
 texture = ExtResource( 1 )
@@ -315,27 +315,7 @@ vframes = 6
 hframes = 6
 frame = 14
 
-[node name="body" type="StaticBody2D" parent="hp-box"]
-
-input/pickable = false
-shapes/0/shape = SubResource( 1 )
-shapes/0/transform = Matrix32( 1, 0, 0, 1, 0, 0 )
-shapes/0/trigger = false
-collision/layers = 1
-collision/mask = 1
-constant_linear_velocity = Vector2( 0, 0 )
-constant_angular_velocity = 0.0
-friction = 1.0
-bounce = 0.0
-
-[node name="collision" type="CollisionPolygon2D" parent="hp-box/body"]
-
-build_mode = 0
-polygon = Vector2Array( -8, -8, -8, 8, 8, 8, 8, -8 )
-shape_range = Vector2( 0, 0 )
-trigger = false
-
-[node name="both-box" type="Sprite" parent="." groups=[ "ground" ]]
+[node name="both-box" type="Sprite" parent="."]
 
 transform/pos = Vector2( 24, 56 )
 texture = ExtResource( 1 )
@@ -343,53 +323,13 @@ vframes = 6
 hframes = 6
 frame = 13
 
-[node name="body" type="StaticBody2D" parent="both-box"]
-
-input/pickable = false
-shapes/0/shape = SubResource( 1 )
-shapes/0/transform = Matrix32( 1, 0, 0, 1, 0, 0 )
-shapes/0/trigger = false
-collision/layers = 1
-collision/mask = 1
-constant_linear_velocity = Vector2( 0, 0 )
-constant_angular_velocity = 0.0
-friction = 1.0
-bounce = 0.0
-
-[node name="collision" type="CollisionPolygon2D" parent="both-box/body"]
-
-build_mode = 0
-polygon = Vector2Array( -8, -8, -8, 8, 8, 8, 8, -8 )
-shape_range = Vector2( 0, 0 )
-trigger = false
-
-[node name="mass-box" type="Sprite" parent="." groups=[ "ground" ]]
+[node name="mass-box" type="Sprite" parent="."]
 
 transform/pos = Vector2( 40, 56 )
 texture = ExtResource( 1 )
 vframes = 6
 hframes = 6
 frame = 15
-
-[node name="body" type="StaticBody2D" parent="mass-box"]
-
-input/pickable = false
-shapes/0/shape = SubResource( 1 )
-shapes/0/transform = Matrix32( 1, 0, 0, 1, 0, 0 )
-shapes/0/trigger = false
-collision/layers = 1
-collision/mask = 1
-constant_linear_velocity = Vector2( 0, 0 )
-constant_angular_velocity = 0.0
-friction = 1.0
-bounce = 0.0
-
-[node name="collision" type="CollisionPolygon2D" parent="mass-box/body"]
-
-build_mode = 0
-polygon = Vector2Array( -8, -8, -8, 8, 8, 8, 8, -8 )
-shape_range = Vector2( 0, 0 )
-trigger = false
 
 [node name="spikes-left" type="Sprite" parent="." groups=[ "ground" ]]
 

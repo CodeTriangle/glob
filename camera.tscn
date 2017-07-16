@@ -1,0 +1,23 @@
+[gd_scene format=1]
+
+[node name="camera" type="Camera2D"]
+
+transform/pos = Vector2( 8, 8 )
+anchor_mode = 1
+rotating = false
+current = true
+zoom = Vector2( 0.3, 0.3 )
+limit/left = -1000000
+limit/top = -1000000
+limit/right = 10000000
+limit/bottom = 10000000
+drag_margin/h_enabled = true
+drag_margin/v_enabled = true
+smoothing/enable = false
+smoothing/speed = 5.0
+drag_margin/left = 0.05
+drag_margin/top = 0.05
+drag_margin/right = 0.05
+drag_margin/bottom = 0.05
+
+
