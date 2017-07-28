@@ -19,6 +19,7 @@ var can_move = true
 var state = STATE_NORMAL
 var stabilize_timer = 0
 var can_act_again = false
+var can_grow = true
 var on_ground = true
 var mass = 128
 var max_mass = 128
@@ -112,7 +113,7 @@ func shoot():
 	p.set_linear_velocity(lv)
 	
 	var psn = get_pos()
-	psn.y -= 30
+	psn.y -= 20
 	p.set_pos(psn)
 	
 	mass /= 2
@@ -179,6 +180,9 @@ func _fixed_process(delta):
 	if walls.get_cellv(cells["current"]) == 18: die()
 	if walls.get_cellv(cells["current"]) == 17: die()
 	
+	if walls.get_cellv(cells["above"]) == -1: can_grow = true
+	else: can_grow = false
+	
 	if mass <= 0: die()
 	
 	if cells["current"].x > 92 and cells["current"].y == 20: get_tree().change_scene("res://menu.tscn")
@@ -209,7 +213,7 @@ func _integrate_forces(s):
 			if lv.x <= -TERMINAL_VELOCITY*speed_mod: lv.x = -TERMINAL_VELOCITY*speed_mod
 	
 		# Start growing if [grow] is held
-		if grow and not shrink and on_ground and state == STATE_NORMAL: state = STATE_GROWING
+		if grow and not shrink and on_ground and can_grow and state == STATE_NORMAL: state = STATE_GROWING
 		# Immediately grow when [shrink] is released
 		if grow and state == STATE_GROWING: grow()
 		# Restart timer as long as [grow] is still held
